@@ -1,0 +1,71 @@
+import RPi.GPIO as GPIO
+import time
+import urllib.request
+import requests
+import threading
+import json
+import random
+
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+GPIO.setup(17,GPIO.OUT)
+GPIO.setup(18,GPIO.OUT)
+GPIO.setup(27,GPIO.OUT)
+
+
+RLEDON = GPIO.output(17, GPIO.HIGH)
+RLEDOFF = GPIO.output(17, GPIO.LOW)
+
+YLEDON = GPIO.output(18, GPIO.HIGH)
+YLEDOFF = GPIO.output(18, GPIO.LOW)
+
+GLEDON = GPIO.output(27, GPIO.HIGH)
+GLEDOFF = GPIO.output(27, GPIO.LOW)
+
+def read_data_thingspeak():
+    URL='https://api.thingspeak.com/channels/1687008/fields/1.json?api_key='
+    KEY='B8C4E3KVVWH2ZXEC'
+    HEADER='&results=1'
+    NEW_URL=URL+KEY+HEADER
+
+
+    get_data=requests.get(NEW_URL).json()
+    print(get_data)
+    channel_id=get_data['channel']['id']
+    print(channel_id)
+    field_1=get_data['feeds']
+    print(field_1)
+
+    
+    Light = []
+    for x in field_1:
+        print(x['field1'])
+        Light.append(x['field1'])
+
+
+
+    return Light
+
+if __name__ == '__main__':
+    while True: #infinite loop
+        LList = read_data_thingspeak()
+        LStr = (LList[0])
+
+        L  = float(LStr)
+        print(L)
+        if L < 13 and L > 25: #red
+            GPIO.output(17, GPIO.HIGH)
+            time.sleep(1)
+            GPIO.output(17, GPIO.LOW)
+            time.sleep(1)
+        elif L > 13 and L < 16: # orange
+            GPIO.output(18, GPIO.HIGH)
+            time.sleep(1)
+            GPIO.output(18, GPIO.LOW)
+            time.sleep(1)
+        elif L > 16 and L < 25: # green
+            GPIO.output(27, GPIO.HIGH)
+            time.sleep(1)
+            GPIO.output(27, GPIO.LOW)
+            time.sleep(1)
