@@ -1,0 +1,92 @@
+// This #include statement was automatically added by the Particle IDE.
+#include <BH1750Lib.h>
+
+// This #include statement was automatically added by the Particle IDE.
+#include <Adafruit_DHT.h>
+
+// This #include statement was automatically added by the Particle IDE.
+#include <ThingSpeak.h>
+
+#define RUN 1
+
+
+//setting up the temp and hum sensor
+#define DHTPIN 2
+#define DHTTYPE DHT22
+double temperature = 0; // temperature measurement
+double humidity = 0; // humidity measurement
+char temperatureCh[15]; // .publish() requires a char and not an int we make a char variable to put the measurement in
+char humidityCh[15]; // .publish() requires a char and not an int we make a char variable to put the measurement in
+DHT dht(DHTPIN, DHTTYPE);
+
+
+TCPClient client;
+unsigned long myChannelNumber = 1687008;
+const char * myWriteAPIKey = "XAFKQOGGP4E65OOG";
+
+
+BH1750Lib lightmeter;
+
+void setup(){
+    
+    ThingSpeak.begin(client);
+    
+    Serial.begin(9600);
+    lightmeter.begin(BH1750LIB_MODE_CONTINUOUSHIGHRES);
+    Serial.println("Running...");
+    
+    
+    Particle.variable("Temperature", temperatureCh);    // Enables console to pull current Temperature value
+    Particle.variable("Humidity", humidityCh);   // Enables console to pull current Humidity value
+}
+
+
+void loop() {
+    uint16_t lux = lightmeter.lightLevel();
+    int level;
+    
+
+    
+    #if (RUN == 1)
+    
+        if (lux > 20)
+        {
+        Particle.publish("lightLevel", "bright");
+        Particle.publish("lightLevel", String(lux));
+        
+        ThingSpeak.setField(3, lux); //setting what field graph to publish
+      
+        ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+        }
+
+        
+        else 
+        {
+        Particle.publish("lightLevel", "dark");
+        Particle.publish("lightLevel", String(lux));
+        
+        ThingSpeak.setField(3, lux); //setting what field graph to publish
+      
+        ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+        }
+        
+        
+        temperature = dht.getTempCelcius();
+        humidity = dht.getHumidity();
+
+        if(temperature!=0) 
+        {
+            sprintf(temperatureCh, "%.1f", temperature); // assign temperature as a char to temperatureCh
+            sprintf(humidityCh, "%.1f", humidity); // assign humidity as a char to humidityCh
+        
+            Particle.publish("Temperature", temperatureCh, PRIVATE); // Publish the temperature as an event
+            Particle.publish("Humidity", humidityCh, PRIVATE); // Publish the humidity as an event
+            ThingSpeak.setField(1,temperatureCh);
+            ThingSpeak.setField(2,humidityCh);
+            ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+        }
+
+    #endif
+
+    delay(10000);
+}
