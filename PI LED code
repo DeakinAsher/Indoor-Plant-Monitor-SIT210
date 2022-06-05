@@ -48,7 +48,7 @@ def read_data_thingspeak():
     return Light
 
 if __name__ == '__main__':
-    while True: #infinite loop
+    while True: 
         LList = read_data_thingspeak()
         LStr = (LList[0])
 
